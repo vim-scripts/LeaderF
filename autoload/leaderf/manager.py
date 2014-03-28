@@ -15,6 +15,7 @@ class Manager(object):
     def __init__(self):
         self._bufName = vim.eval("expand('$VIMRUNTIME/[LeaderF]')")
         self._winPos = int(vim.eval("g:Lf_WindowPosition"))
+        self._autochdir = 0
         self._cli = LfCli()
         self._explorer = None
         self._index = 0
@@ -103,7 +104,14 @@ class Manager(object):
         return 0
 
     def _gotoBuffer(self):
+        if int(vim.eval("&autochdir")) == 1:
+            self._autochdir = 1
+            vim.command("set noautochdir")
+        else:
+            self._autochdir = 0
+
         self._origBuf = vim.current.buffer.name
+        self._origWinNr = int(vim.eval("winnr()"))
         nr = self._bufwinnr(self._bufName)
         if nr == 0:
             self._createBufWindow()
@@ -143,7 +151,7 @@ class Manager(object):
         vim.command("setlocal statusline+=\ \ %<%#Lf_hl_stlCurDir#%{g:Lf_statusline_curDir}%#Lf_hl_none#")
         vim.command("setlocal statusline+=%=%lL/%-5L")
         vim.command("redraw!")
-   
+
     def _toUp(self):
         vim.command("norm! k")
 
@@ -232,7 +240,7 @@ class Manager(object):
                 break
 
         if self._getExplorer().supportsSort():
-            num = int(vim.eval("g:Lf_NumberOfSort")) 
+            num = int(vim.eval("g:Lf_NumberOfSort"))
             if num == -1:
                 self._sortResult(len(cb))
             elif num == 0:
@@ -241,7 +249,8 @@ class Manager(object):
                 self._sortResult(vim.current.window.height)
             else:
                 self._sortResult(num)
- 
+            vim.current.window.cursor = (self._helpLength + 1, 0)
+
     def _getWeight(self, str, t):
         '''
         this function can be overridden to get the weight of the line,
@@ -307,7 +316,6 @@ class Manager(object):
                     pairs.sort(key = lambda x: x[0], reverse = True)
                     for i in pairs:
                         del cb[i[0] + len(pairs)]
-                    vim.current.window.cursor = (self._helpLength + 1, 0)
             else:
                 pass
 
@@ -322,7 +330,7 @@ class Manager(object):
                     vim.command("vsplit")
                 elif mode == 't':
                     vim.command("tabedit | tabm")
-                self._getExplorer().acceptSelection(file) 
+                self._getExplorer().acceptSelection(file)
         except vim.error:
             pass
 
@@ -360,10 +368,13 @@ class Manager(object):
             self._accept(file, mode)
 
     def quit(self):
+        if self._autochdir == 1:
+            vim.command("set autochdir")
         self._cli.clear()
         self._selections.clear()
         if self._winPos != 0 and len(vim.windows) > 1:
             vim.command("hide")
+            vim.command("exec '%d wincmd w'" % self._origWinNr)
         else:
             if self._origBuf is None or vim.eval("bufexists('%s')" % escQuote(self._origBuf)) == '0':
                 vim.command("bd")
@@ -484,3 +495,4 @@ class Manager(object):
                     break
         if quit: #due to a bug, I have to write this ugly code
             self.quit()
+

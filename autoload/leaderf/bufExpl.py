@@ -21,7 +21,7 @@ def showRelativePath(func):
                 return func(*args, **kwargs)
         else:
             return func(*args, **kwargs)
-    return deco 
+    return deco
 
 
 #*****************************************************
@@ -39,7 +39,7 @@ class BufferExplorer(Explorer):
             return [b.name for b in vim.buffers if vim.eval("buflisted('%s')" % escQuote(b.name)) == '1']
 
     def acceptSelection(self, *args, **kwargs):
-        if len(args) == 0: 
+        if len(args) == 0:
             return
         file = args[0]
         vim.command("hide edit %s" % escSpecial(file))
@@ -69,8 +69,8 @@ class BufExplManager(Manager):
     def _createHelp(self):
         help = []
         help.append('" <CR>/<double-click>/o : open file under cursor')
-        help.append('" x : open file under cursor in a splited buffer')
-        help.append('" v : open file under cursor in a vertical splited buffer')
+        help.append('" x : open file under cursor in a horizontally split window')
+        help.append('" v : open file under cursor in a vertically split window')
         help.append('" t : open file under cursor in a new tabpage')
         help.append('" d : wipe out buffer under cursor')
         help.append('" D : delete buffer under cursor')
